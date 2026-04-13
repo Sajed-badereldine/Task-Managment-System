@@ -51,6 +51,21 @@ This project includes a backend server for authentication and task management, a
 - Axios
 - Basic UI styling
 
+### Main Page
+<img src="./main page.png" alt="Main Page" width="1000" />
+
+### Sign In Page
+<img src="./sign-in page.png" alt="Sign In Page" width="1000" />
+
+### Create User Page
+<img src="./create-user-page.png" alt="Create User Page" width="1000" />
+
+### Admin Page
+<img src="./admin page.png" alt="Admin Page" width="1000" />
+
+### User Page
+<img src="./user-page.png" alt="User Page" width="1000" />
+
 ## Project Structure
 
 ```bash
