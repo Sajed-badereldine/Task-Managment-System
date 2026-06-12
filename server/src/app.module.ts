@@ -26,6 +26,7 @@ import { Task } from './tasks/entities/task.entity';
         database: configService.get<string>('DB_NAME'),
         entities: [User, Task],
         synchronize: true,
+        ssl: configService.get<string>('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
       }),
     }),
 
