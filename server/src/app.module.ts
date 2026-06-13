@@ -19,14 +19,16 @@ import { Task } from './tasks/entities/task.entity';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USERNAME'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_NAME'),
+        // Use the pooled database connection string for app traffic
+        url: configService.get<string>('DATABASE_URL'),
         entities: [User, Task],
-        synchronize: true,
-        ssl: configService.get<string>('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
+        synchronize: false, // Keep false in production!
+        ssl: true,
+        extra: {
+          ssl: {
+            rejectUnauthorized: false,
+          },
+        },
       }),
     }),
 
@@ -35,4 +37,4 @@ import { Task } from './tasks/entities/task.entity';
     AuthModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

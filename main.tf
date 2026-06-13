@@ -12,7 +12,6 @@ provider "aws" {
   region = var.aws_region
 }
 
-# 2. Network Infrastructure (VPC & Subnet)
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
@@ -72,8 +71,6 @@ resource "aws_route_table_association" "public_assoc_2" {
   route_table_id = aws_route_table.public_rt.id
 }
 
-# 3. Security Group for the Container
-# 3. Security Groups for ALB and ECS
 resource "aws_security_group" "alb_sg" {
   name        = "ecs-alb-security-group"
   description = "Allow public inbound HTTP traffic"
@@ -124,7 +121,6 @@ resource "aws_security_group" "ecs_sg" {
   }
 }
 
-# 4. Container Components (ECR & ECS)
 resource "aws_ecr_repository" "client_repo" {
   name                 = var.ecr_client_repo_name
   image_tag_mutability = "MUTABLE"
@@ -147,7 +143,6 @@ resource "aws_ecs_cluster" "app_cluster" {
   name = var.ecs_cluster_name
 }
 
-# 6. IAM Roles for ECS Task Execution
 resource "aws_iam_role" "ecs_execution_role" {
   name = "ecs-task-execution-role"
 
@@ -187,7 +182,6 @@ resource "aws_iam_role" "ecs_task_role" {
   })
 }
 
-# 7. Application Load Balancer (ALB) Configuration
 resource "aws_lb" "main" {
   name               = "ecs-app-alb"
   internal           = false
@@ -234,7 +228,7 @@ resource "aws_lb_target_group" "server" {
     unhealthy_threshold = 3
     timeout             = 5
     interval            = 30
-    matcher             = "200-499" # Accept 404/others for main path if no root route is defined
+    matcher             = "200-499"
   }
 }
 
@@ -265,7 +259,6 @@ resource "aws_lb_listener_rule" "api" {
   }
 }
 
-# 8. Security & Logging
 resource "aws_cloudwatch_log_group" "ecs_client_log" {
   name              = "/ecs/client"
   retention_in_days = 7
@@ -276,19 +269,17 @@ resource "aws_cloudwatch_log_group" "ecs_server_log" {
   retention_in_days = 7
 }
 
-# Secure SSM Parameter for Database Password
-resource "aws_ssm_parameter" "db_password" {
-  name        = "/db/password"
-  description = "Database administrator password for Neon"
+resource "aws_ssm_parameter" "database_url" {
+  name        = "/db/database_url"
+  description = "Pooled database connection string for Neon"
   type        = "SecureString"
-  value       = "placeholder_change_me_in_console"
+  value       = var.database_url
 
   lifecycle {
     ignore_changes = [value]
   }
 }
 
-# Attach policy to allow ECS execution role to decrypt secrets
 resource "aws_iam_role_policy" "ecs_execution_ssm" {
   name = "ecs-execution-ssm-policy"
   role = aws_iam_role.ecs_execution_role.id
@@ -309,7 +300,6 @@ resource "aws_iam_role_policy" "ecs_execution_ssm" {
   })
 }
 
-# 9. ECS Task Definitions
 resource "aws_ecs_task_definition" "client" {
   family                   = "client-task"
   network_mode             = "awsvpc"
@@ -362,17 +352,16 @@ resource "aws_ecs_task_definition" "server" {
           hostPort      = 3000
         }
       ]
+      # Non-sensitive app configurations go here
       environment = [
-        { name = "DB_HOST", value = var.db_host },
-        { name = "DB_PORT", value = tostring(var.db_port) },
-        { name = "DB_USERNAME", value = var.db_user },
-        { name = "DB_NAME", value = var.db_name },
-        { name = "DB_SSL", value = tostring(var.db_ssl) }
+        { name = "PORT", value = "3000" },
+        { name = "JWT_SECRET", value = "super_secret_key" }
       ]
+      # Sensitive variables are securely pulled from SSM Parameter Store
       secrets = [
         {
-          name      = "DB_PASSWORD"
-          valueFrom = aws_ssm_parameter.db_password.arn
+          name      = "DATABASE_URL"
+          valueFrom = aws_ssm_parameter.database_url.arn
         }
       ]
       logConfiguration = {
@@ -387,7 +376,6 @@ resource "aws_ecs_task_definition" "server" {
   ])
 }
 
-# 10. ECS Services
 resource "aws_ecs_service" "client" {
   name            = "client-service"
   cluster         = aws_ecs_cluster.app_cluster.id
@@ -407,7 +395,6 @@ resource "aws_ecs_service" "client" {
     container_port   = 80
   }
 
-  # Ensure the ALB is created before the ECS Service routes traffic
   depends_on = [aws_lb_listener.http]
 }
 
@@ -433,7 +420,6 @@ resource "aws_ecs_service" "server" {
   depends_on = [aws_lb_listener.http]
 }
 
-# 5. Outputs to use in your terminal later
 output "alb_dns_name" {
   value       = aws_lb.main.dns_name
   description = "The DNS name of the Application Load Balancer"
@@ -442,7 +428,6 @@ output "client_ecr_repository_url" {
   value       = aws_ecr_repository.client_repo.repository_url
   description = "The URL where you will push your client (frontend) Docker image"
 }
-
 output "server_ecr_repository_url" {
   value       = aws_ecr_repository.server_repo.repository_url
   description = "The URL where you will push your server (backend) Docker image"

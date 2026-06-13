@@ -40,32 +40,8 @@ variable "ecs_cluster_name" {
   default     = "my-application-cluster"
 }
 
-variable "db_name" {
+variable "database_url" {
   type        = string
-  description = "Database name"
-  default     = "taskmanager"
+  description = "The pooled connection string for the Neon database"
+  sensitive   = true
 }
-
-variable "db_user" {
-  type        = string
-  description = "Database administrator username"
-  default     = "postgres"
-}
-
-variable "db_host" {
-  type        = string
-  description = "Database host address (e.g., Neon host)"
-}
-
-variable "db_port" {
-  type        = number
-  description = "Database port"
-  default     = 5432
-}
-
-variable "db_ssl" {
-  type        = bool
-  description = "Enable SSL for database connection (required for Neon)"
-  default     = true
-}
-
