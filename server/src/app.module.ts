@@ -22,7 +22,7 @@ import { Task } from './tasks/entities/task.entity';
         // Use the pooled database connection string for app traffic
         url: configService.get<string>('DATABASE_URL'),
         entities: [User, Task],
-        synchronize: false, // Keep false in production!
+        synchronize: true,
         ssl: true,
         extra: {
           ssl: {

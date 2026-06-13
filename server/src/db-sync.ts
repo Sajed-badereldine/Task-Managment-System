@@ -4,7 +4,6 @@ import { Task } from './tasks/entities/task.entity';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-// Explicitly point to the .env file in the current working directory
 dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 console.log("🔍 Checking Environment Variables for Database Sync:");
@@ -17,9 +16,9 @@ if (!process.env.DIRECT_URL) {
 
 const AppDataSource = new DataSource({
   type: 'postgres',
-  url: process.env.DIRECT_URL, // Target the unpooled direct connection
+  url: process.env.DIRECT_URL,
   entities: [User, Task],
-  synchronize: true,           // Safely forces table generation
+  synchronize: true,
   ssl: true,
   extra: {
     ssl: {
