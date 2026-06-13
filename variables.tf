@@ -45,3 +45,20 @@ variable "database_url" {
   description = "The pooled connection string for the Neon database"
   sensitive   = true
 }
+
+variable "admin_email" {
+  description = "Default admin email"
+  type        = string
+}
+
+variable "admin_password" {
+  description = "Default admin password"
+  type        = string
+  sensitive   = true
+}
+
+variable "jwt_secret" {
+  description = "Secret key for signing JSON Web Tokens"
+  type        = string
+  sensitive   = true
+}

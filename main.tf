@@ -280,6 +280,18 @@ resource "aws_ssm_parameter" "database_url" {
   }
 }
 
+resource "aws_ssm_parameter" "admin_email" {
+  name  = "/ecs/admin_email"
+  type  = "String"
+  value = var.admin_email
+}
+
+resource "aws_ssm_parameter" "admin_password" {
+  name  = "/ecs/admin_password"
+  type  = "SecureString"
+  value = var.admin_password
+}
+
 resource "aws_iam_role_policy" "ecs_execution_ssm" {
   name = "ecs-execution-ssm-policy"
   role = aws_iam_role.ecs_execution_role.id
@@ -332,6 +344,14 @@ resource "aws_ecs_task_definition" "client" {
   ])
 }
 
+
+resource "aws_ssm_parameter" "jwt_secret" {
+  name  = "/ecs/jwt_secret"
+  type  = "SecureString"
+  value = var.jwt_secret
+}
+
+
 resource "aws_ecs_task_definition" "server" {
   family                   = "server-task"
   network_mode             = "awsvpc"
@@ -352,18 +372,30 @@ resource "aws_ecs_task_definition" "server" {
           hostPort      = 3000
         }
       ]
-      # Non-sensitive app configurations go here
+
       environment = [
-        { name = "PORT", value = "3000" },
-        { name = "JWT_SECRET", value = "super_secret_key" }
+        { name = "PORT", value = "3000" }
       ]
-      # Sensitive variables are securely pulled from SSM Parameter Store
+
       secrets = [
         {
           name      = "DATABASE_URL"
           valueFrom = aws_ssm_parameter.database_url.arn
+        },
+        {
+          name      = "ADMIN_EMAIL"
+          valueFrom = aws_ssm_parameter.admin_email.arn
+        },
+        {
+          name      = "ADMIN_PASSWORD"
+          valueFrom = aws_ssm_parameter.admin_password.arn
+        },
+        {
+          name      = "JWT_SECRET"
+          valueFrom = aws_ssm_parameter.jwt_secret.arn
         }
       ]
+
       logConfiguration = {
         logDriver = "awslogs"
         options = {
